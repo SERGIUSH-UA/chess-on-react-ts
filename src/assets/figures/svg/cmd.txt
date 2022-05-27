@@ -1,0 +1,2 @@
+svgo -f "C:\OpenServer54\domains\chess-on-react-ts\src\assets\figures\svg\chess7" -o "C:\OpenServer54\domains\chess-on-react-ts\src\assets\figures\svg\out"
+copy src\assets\figures\svg\out\*.* src\assets\figures\svg\chess7
