@@ -121,17 +121,30 @@ export class Board {
     }
 
     public isCellUnderAttack(color: Colors, cell: Cell): boolean {
+        const copyFigure = cell.figure;
+        cell.figure = null;
         for (let i = 0; i < this.cells.length; i++) {
             const row = this.cells[i];
             for (let j = 0; j < row.length; j++) {
                 const target = row[j];
                 if (target.figure && target.figure.color !== color) {
-                    if (target.figure.canMove(cell, true)) {
+                    if (target.figure.name === FigureNames.PAWN) {
+                        const direction = target.figure.color === Colors.BLACK ? 1 : -1;
+                        const leftX = target.x - 1;
+                        const rightX = target.x + 1;
+                        const stepY = target.y + direction;
+                        if (cell.y === stepY && (cell.x === leftX || cell.x === rightX)){
+                            cell.figure = copyFigure;
+                            return true;
+                        }
+                    } else if (target.figure.canMove(cell, true)) {
+                        cell.figure = copyFigure;
                         return true;
                     }
                 }
             }
         }
+        cell.figure = copyFigure;
         return false;
     }
 
@@ -140,18 +153,85 @@ export class Board {
         if (king) {
             for (let x = -1; x < 2; x++) {
                 const scanX = king.x + x;
-                if(scanX > -1 && scanX < 8){
+                if (scanX > -1 && scanX < 8) {
                     for (let y = -1; y < 2; y++) {
                         const scanY = king.y + y;
-                        if(scanY > -1 && scanY < 8) {
+                        if (scanY > -1 && scanY < 8) {
                             const target = this.getCell(scanX, scanY);
                             if (king.figure?.canMove(target, true)) {
-                                    return true;
+                                return true;
                             }
                         }
                     }
                 }
 
+            }
+        }
+        return false;
+    }
+
+    getKingProtectedZone(color: Colors): Cell[] {
+        let protectedZone: Cell[] = [];
+        const king = this.getCellWithKing(color);
+        if (king) {
+            for (let x = -1; x < 2; x++) {
+                const scanX = king.x + x;
+                if (scanX > -1 && scanX < 8) {
+                    for (let y = -1; y < 2; y++) {
+                        const scanY = king.y + y;
+                        if (scanY > -1 && scanY < 8) {
+                            const target = this.getCell(scanX, scanY);
+                            protectedZone.push(target);
+                        }
+                    }
+                }
+
+            }
+        }
+        return protectedZone;
+    }
+
+    isPossiblyProtectedKing(color: Colors) {
+        const copyBoard = this.getCopyBoard();
+
+        let allUnitedFigures: Cell[] = [];
+        let otherCells: Cell[] = [];
+        for (let i = 0; i < this.cells.length; i++) {
+            const row = copyBoard.cells[i];
+            for (let j = 0; j < row.length; j++) {
+                const target = row[j];
+                if (target.figure && target.figure.color === color) {
+                    allUnitedFigures.push(target);
+                } else {
+                    otherCells.push(target);
+                }
+            }
+        }
+
+        let defenceCells: Cell[] = []
+
+        for (let target of otherCells) {
+            if (target.figure) {
+                const copyFigure = target.figure;
+                target.figure = null;
+                if (!copyBoard.isKingUnderAttack(color)) {
+                    defenceCells.push(target);
+                }
+                target.figure = copyFigure;
+            } else {
+                new Pawn(color, target, this.theme);
+                if (!copyBoard.isKingUnderAttack(color)) {
+                    defenceCells.push(target);
+                }
+                target.figure = null;
+            }
+        }
+
+        for (let defender of allUnitedFigures) {
+            for (let target of defenceCells) {
+                if (defender.figure?.canMove(target, false)) {
+                    return true;
+                }
             }
         }
         return false;

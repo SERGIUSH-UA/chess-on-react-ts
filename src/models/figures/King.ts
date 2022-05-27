@@ -12,14 +12,26 @@ export class King extends Figure {
         this.code = FigureCode.KING;
     }
 
-    canMove(target: Cell, check:boolean): boolean {
+    canMove(target: Cell, check: boolean): boolean {
         check = false;
         if (!super.canMove(target, check)) {
             return false;
         }
-        if(Math.abs(target.x - this.cell.x) < 2 && Math.abs(target.y - this.cell.y) < 2) {
-            if(this.cell.board.isCellUnderAttack(this.color, target)){
+        if (Math.abs(target.x - this.cell.x) < 2 && Math.abs(target.y - this.cell.y) < 2) {
+            const copyKing = this;
+            this.cell.figure = null;
+            if (this.cell.board.isCellUnderAttack(this.color, target)) {
+                copyKing.cell.figure = copyKing;
                 return false;
+            }
+            copyKing.cell.figure = copyKing;
+
+            const protectedZone = this.cell.board.getKingProtectedZone(this.color === Colors.WHITE
+                ? Colors.BLACK : Colors.WHITE);
+            for (const protect of protectedZone) {
+                if (target.x === protect.x && target.y === protect.y) {
+                    return false;
+                }
             }
             return true;
         }

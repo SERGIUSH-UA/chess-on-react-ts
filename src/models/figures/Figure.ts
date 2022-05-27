@@ -2,6 +2,7 @@ import logo from '../../assets/figures/svg/alpha/bB.svg'
 import {Colors} from "../Colors";
 import {Cell} from "../Cell";
 import {Theme} from "../themes/Theme";
+import {Pawn} from "./Pawn";
 
 export enum FigureNames{
     FIGURE = 'FIGURE',
@@ -53,9 +54,40 @@ export class Figure {
         if(!check && target.figure?.name === FigureNames.KING){
             return false;
         }
-        if(!check && this.name !== FigureNames.KING && this.cell.board.isKingUnderAttack(this.color)){
+
+        if(false && !check && this.name !== FigureNames.KING && this.cell.board.isKingUnderAttack(this.color)){
+
+            if(target.figure){
+                const copyFigure = target.figure;
+                target.figure = null;
+                if (!this.cell.board.isKingUnderAttack(this.color)){
+                    target.figure = copyFigure;
+                    return true;
+                }
+                target.figure = copyFigure;
+            } else {
+                new Pawn(this.color, target, this.theme);
+                if (!this.cell.board.isKingUnderAttack(this.color)){
+                    target.figure = null;
+                    return true;
+                }
+                target.figure = null;
+            }
             return false;
         }
+
+        const copyFigure = this;
+        const copyTargetFigure = target.figure;
+        this.cell.figure = null;
+        target.figure = copyFigure;
+        if (this.cell.board.isKingUnderAttack(this.color)){
+            this.cell.figure = copyFigure;
+            target.figure = copyTargetFigure;
+            return false;
+        }
+        this.cell.figure = copyFigure;
+        target.figure = copyTargetFigure;
+
         return true;
     }
 
